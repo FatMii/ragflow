@@ -21,7 +21,6 @@ import pandas as pd
 import pymysql
 import psycopg2
 import pyodbc
-import ibm_db
 from agent.tools.base import ToolParamBase, ToolBase, ToolMeta
 from api.utils.api_utils import timeout
 
@@ -125,6 +124,7 @@ class ExeSQL(ToolBase, ABC):
             )
             db = pyodbc.connect(conn_str)
         elif self._param.db_type == 'IBM DB2':
+            import ibm_db
             conn_str = (
                 f"DATABASE={self._param.database};"
                 f"HOSTNAME={self._param.host};"
@@ -162,6 +162,8 @@ class ExeSQL(ToolBase, ABC):
                     if pd.api.types.is_datetime64_any_dtype(df[col]):
                         df[col] = df[col].dt.strftime("%Y-%m-%d")
 
+                df = df.where(pd.notnull(df), None)
+
                 sql_res.append(convert_decimals(df.to_dict(orient="records")))
                 formalized_content.append(df.to_markdown(index=False, floatfmt=".6f"))
 
@@ -196,6 +198,8 @@ class ExeSQL(ToolBase, ABC):
             for col in single_res.columns:
                 if pd.api.types.is_datetime64_any_dtype(single_res[col]):
                     single_res[col] = single_res[col].dt.strftime('%Y-%m-%d')
+
+            single_res = single_res.where(pd.notnull(single_res), None)
 
             sql_res.append(convert_decimals(single_res.to_dict(orient='records')))
             formalized_content.append(single_res.to_markdown(index=False, floatfmt=".6f"))
